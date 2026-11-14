@@ -1,0 +1,29 @@
+# 两个共库 API 进程：api-a(8001) 与 api-b(8002) 挂载同一数据卷，
+# 共享同一 SQLite 库文件（WAL 模式），任一端写入、两端查询结论一致；重启保留。
+services:
+  api-a:
+    build: .
+    ports:
+      - "8001:8000"
+    volumes:
+      - survey-data:/data
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request;urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  api-b:
+    build: .
+    ports:
+      - "8002:8000"
+    volumes:
+      - survey-data:/data
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request;urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+volumes:
+  survey-data:
