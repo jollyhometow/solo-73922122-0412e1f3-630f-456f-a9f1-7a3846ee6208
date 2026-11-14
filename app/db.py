@@ -113,3 +113,22 @@ def read_tx():
         yield conn
     finally:
         conn.close()
+
+
+@contextmanager
+def snapshot_tx():
+    """一致性只读快照。
+
+    WAL 模式下，显式 BEGIN 后的第一次读取即固定快照；事务存续期间其他进程
+    提交的写入对本连接不可见。判读需要同时读取 observations 与 revisions，
+    必须用同一快照，才能保证判定与所用分支来自同一个已提交状态。
+    """
+    conn = connect()
+    try:
+        conn.execute("BEGIN")
+        try:
+            yield conn
+        finally:
+            conn.execute("ROLLBACK")  # 只读事务，回滚即可结束快照
+    finally:
+        conn.close()
